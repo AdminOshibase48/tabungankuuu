@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celengan Digital</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Halaman Login -->
+        <div id="loginPage" class="page">
+            <div class="login-container">
+                <h2>Celengan Digital</h2>
+                <form id="loginForm">
+                    <input type="text" id="username" placeholder="Username" required>
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                <p>Belum punya akun? <a href="#" onclick="showRegister()">Daftar di sini</a></p>
+            </div>
+        </div>
+
+        <!-- Halaman Register -->
+        <div id="registerPage" class="page hidden">
+            <div class="login-container">
+                <h2>Daftar Akun Baru</h2>
+                <form id="registerForm">
+                    <input type="text" id="regUsername" placeholder="Username" required>
+                    <input type="password" id="regPassword" placeholder="Password" required>
+                    <input type="password" id="regConfirmPassword" placeholder="Konfirmasi Password" required>
+                    <button type="submit">Daftar</button>
+                </form>
+                <p>Sudah punya akun? <a href="#" onclick="showLogin()">Login di sini</a></p>
+            </div>
+        </div>
+
+        <!-- Halaman Dashboard -->
+        <div id="dashboardPage" class="page hidden">
+            <header>
+                <h1>Celengan Digital</h1>
+                <button onclick="logout()">Logout</button>
+            </header>
+
+            <div class="container">
+                <!-- Form Target Menabung -->
+                <div class="card">
+                    <h3>Tambah Target Menabung</h3>
+                    <form id="targetForm">
+                        <input type="text" id="namaBarang" placeholder="Nama Barang" required>
+                        <input type="number" id="hargaBarang" placeholder="Harga Barang" required>
+                        <input type="number" id="targetHarian" placeholder="Target Harian (Rp)" required>
+                        <button type="submit">Tambah Target</button>
+                    </form>
+                </div>
+
+                <!-- Form Transaksi -->
+                <div class="card">
+                    <h3>Catat Transaksi</h3>
+                    <form id="transactionForm">
+                        <select id="transactionType" required>
+                            <option value="">Pilih Jenis</option>
+                            <option value="pemasukan">Pemasukan</option>
+                            <option value="pengeluaran">Pengeluaran</option>
+                        </select>
+                        <input type="number" id="amount" placeholder="Jumlah (Rp)" required>
+                        <input type="text" id="description" placeholder="Keterangan">
+                        <button type="submit">Catat Transaksi</button>
+                    </form>
+                </div>
+
+                <!-- Daftar Target -->
+                <div class="card">
+                    <h3>Target Menabung</h3>
+                    <div id="targetList"></div>
+                </div>
+
+                <!-- Laporan -->
+                <div class="card">
+                    <h3>Laporan Keuangan</h3>
+                    <div class="summary">
+                        <div class="summary-item">
+                            <span>Total Pemasukan:</span>
+                            <span id="totalPemasukan">Rp 0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Total Pengeluaran:</span>
+                            <span id="totalPengeluaran">Rp 0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Saldo:</span>
+                            <span id="saldo">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafik -->
+                <div class="card">
+                    <h3>Visualisasi Keuangan</h3>
+                    <canvas id="financeChart"></canvas>
+                </div>
+
+                <!-- Riwayat Transaksi -->
+                <div class="card">
+                    <h3>Riwayat Transaksi</h3>
+                    <div id="transactionHistory"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
