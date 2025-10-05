@@ -68,56 +68,25 @@ class CelenganDB {
         const transactions = this.getTransactions();
         transactions.push({
             id: Date.now(),
-            type: transaction.type,
+            type: 'pemasukan', // Hanya pemasukan sekarang
             amount: parseInt(transaction.amount),
-            description: transaction.description || 'Tanpa Keterangan',
+            description: transaction.description || 'Pemasukan Tabungan',
             date: new Date().toISOString(),
-            targetId: transaction.targetId || null // Tambahkan targetId untuk pemasukan spesifik
+            targetId: transaction.targetId
         });
         this.saveUserData('transactions', transactions);
         
-        if (transaction.type === 'pemasukan' && transaction.targetId) {
-            this.updateSpecificTargetSaldo(transaction.targetId, parseInt(transaction.amount));
-        } else if (transaction.type === 'pemasukan') {
-            this.updateTargetSaldo(parseInt(transaction.amount));
+        // Update saldo target
+        if (transaction.targetId) {
+            this.updateTargetSaldo(transaction.targetId, parseInt(transaction.amount));
         }
     }
 
-    updateTargetSaldo(amount) {
-        const targets = this.getTargets();
-        if (targets.length === 0) return;
-
-        const amountPerTarget = Math.floor(amount / targets.length);
-        let remainingAmount = amount;
-
-        const updatedTargets = targets.map(target => {
-            if (target.terkumpul < target.hargaBarang) {
-                const toAdd = Math.min(amountPerTarget, target.hargaBarang - target.terkumpul);
-                target.terkumpul += toAdd;
-                remainingAmount -= toAdd;
-            }
-            return target;
-        });
-
-        if (remainingAmount > 0) {
-            for (let target of updatedTargets) {
-                if (target.terkumpul < target.hargaBarang && remainingAmount > 0) {
-                    const toAdd = Math.min(remainingAmount, target.hargaBarang - target.terkumpul);
-                    target.terkumpul += toAdd;
-                    remainingAmount -= toAdd;
-                }
-            }
-        }
-
-        this.saveUserData('targets', updatedTargets);
-    }
-
-    updateSpecificTargetSaldo(targetId, amount) {
+    updateTargetSaldo(targetId, amount) {
         const targets = this.getTargets();
         const updatedTargets = targets.map(target => {
             if (target.id === targetId) {
-                const toAdd = Math.min(amount, target.hargaBarang - target.terkumpul);
-                target.terkumpul += toAdd;
+                target.terkumpul = Math.min(target.terkumpul + amount, target.hargaBarang);
             }
             return target;
         });
@@ -177,7 +146,6 @@ function showDashboard() {
     document.getElementById('dashboardPage').classList.remove('hidden');
     updateWelcomeMessage();
     loadDashboardData();
-    startRealtimeUpdates();
 }
 
 function hideAllPages() {
@@ -278,41 +246,11 @@ function initializeForms() {
         showSuccess(`Target "${namaBarang}" berhasil ditambahkan! 💫`);
     });
 
-    // Form Transaksi Umum
-    document.getElementById('transactionForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const type = document.getElementById('transactionType').value;
-        const amount = document.getElementById('amount').value;
-        const description = document.getElementById('description').value.trim() || 'Tanpa Keterangan';
-        
-        if (!type) {
-            showError('Pilih jenis transaksi!');
-            return;
-        }
-        
-        if (!amount || amount <= 0) {
-            showError('Jumlah transaksi harus lebih dari 0!');
-            return;
-        }
-        
-        const transaction = {
-            type: type,
-            amount: amount,
-            description: description
-        };
-        
-        db.saveTransaction(transaction);
-        this.reset();
-        loadDashboardData();
-        const emoji = type === 'pemasukan' ? '💰' : '💸';
-        showSuccess(`Transaksi ${type} berhasil dicatat! ${emoji}`);
-    });
-
     // Form Pemasukan Spesifik untuk Target
     document.getElementById('targetIncomeForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const amount = document.getElementById('targetIncomeAmount').value;
-        const description = document.getElementById('targetIncomeDescription').value.trim() || 'Pemasukan Target';
+        const description = document.getElementById('targetIncomeDescription').value.trim() || 'Pemasukan Tabungan';
         
         if (!amount || amount <= 0) {
             showError('Jumlah pemasukan harus lebih dari 0!');
@@ -325,16 +263,15 @@ function initializeForms() {
         }
         
         const transaction = {
-            type: 'pemasukan',
             amount: amount,
-            description: `${description} (Target Spesifik)`,
+            description: description,
             targetId: selectedTargetId
         };
         
         db.saveTransaction(transaction);
         document.getElementById('targetIncomeForm').reset();
         loadDashboardData();
-        showSuccess(`Pemasukan berhasil ditambahkan ke target! 💰`);
+        showSuccess(`Pemasukan berhasil ditambahkan! 💰`);
         closeTargetDetailModal();
     });
 }
@@ -355,7 +292,7 @@ function loadTargets() {
             <div class="empty-state">
                 <i class="fas fa-bullseye"></i>
                 <p>Belum ada target menabung</p>
-                <small>Tambahkan target pertama Anda!</small>
+                <small>Klik "Tambah Target" untuk memulai!</small>
             </div>
         `;
         return;
@@ -451,8 +388,8 @@ function loadTransactions() {
         transactionHistory.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-exchange-alt"></i>
-                <p>Belum ada transaksi</p>
-                <small>Catat transaksi pertama Anda!</small>
+                <p>Belum ada pemasukan</p>
+                <small>Klik target untuk menambah pemasukan!</small>
             </div>
         `;
         return;
@@ -469,13 +406,13 @@ function loadTransactions() {
         });
         
         return `
-            <div class="transaction-item ${transaction.type}">
+            <div class="transaction-item">
                 <div class="transaction-info">
                     <div class="transaction-desc">${transaction.description}</div>
                     <div class="transaction-date">${formattedDate}</div>
                 </div>
                 <div class="transaction-amount">
-                    ${transaction.type === 'pemasukan' ? '+' : '-'} Rp ${transaction.amount.toLocaleString()}
+                    + Rp ${transaction.amount.toLocaleString()}
                 </div>
             </div>
         `;
@@ -483,39 +420,24 @@ function loadTransactions() {
 }
 
 function loadSummary() {
+    const targets = db.getTargets();
     const transactions = db.getTransactions();
     
-    const totalPemasukan = transactions
-        .filter(t => t.type === 'pemasukan')
-        .reduce((sum, t) => sum + t.amount, 0);
-        
-    const totalPengeluaran = transactions
-        .filter(t => t.type === 'pengeluaran')
-        .reduce((sum, t) => sum + t.amount, 0);
-        
-    const saldo = totalPemasukan - totalPengeluaran;
+    const totalPemasukan = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalTarget = targets.reduce((sum, t) => sum + t.hargaBarang, 0);
+    const totalTerkumpul = targets.reduce((sum, t) => sum + t.terkumpul, 0);
+    const progressTotal = totalTarget > 0 ? Math.round((totalTerkumpul / totalTarget) * 100) : 0;
     
     document.getElementById('totalPemasukan').textContent = `Rp ${totalPemasukan.toLocaleString()}`;
-    document.getElementById('totalPengeluaran').textContent = `Rp ${totalPengeluaran.toLocaleString()}`;
-    document.getElementById('saldo').textContent = `Rp ${saldo.toLocaleString()}`;
-    
-    // Update color based on balance
-    const saldoElement = document.getElementById('saldo');
-    if (saldo < 0) {
-        saldoElement.style.color = '#fef2f2';
-    } else {
-        saldoElement.style.color = '#f0fdf4';
-    }
+    document.getElementById('totalTarget').textContent = `Rp ${totalTarget.toLocaleString()}`;
+    document.getElementById('progressTotal').textContent = `${progressTotal}%`;
 }
 
 function loadChart() {
-    const transactions = db.getTransactions();
+    const targets = db.getTargets();
     const canvas = document.getElementById('financeChart');
     
-    if (!canvas) {
-        console.error('Canvas element not found');
-        return;
-    }
+    if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     
@@ -527,40 +449,32 @@ function loadChart() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Jika tidak ada transaksi
-    if (transactions.length === 0) {
+    // Jika tidak ada target
+    if (targets.length === 0) {
         ctx.font = '16px "Inter", sans-serif';
         ctx.fillStyle = '#64748b';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Belum ada data transaksi', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('Belum ada data target', canvas.width / 2, canvas.height / 2);
         return;
     }
     
-    // Data untuk pie chart
-    const totalPemasukan = transactions
-        .filter(t => t.type === 'pemasukan')
-        .reduce((sum, t) => sum + t.amount, 0);
-        
-    const totalPengeluaran = transactions
-        .filter(t => t.type === 'pengeluaran')
-        .reduce((sum, t) => sum + t.amount, 0);
+    // Data untuk chart
+    const labels = targets.map(t => t.namaBarang);
+    const data = targets.map(t => t.terkumpul);
+    const backgrounds = targets.map((_, i) => {
+        const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+        return colors[i % colors.length];
+    });
     
     // Buat pie chart
     financeChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Pemasukan', 'Pengeluaran'],
+            labels: labels,
             datasets: [{
-                data: [totalPemasukan, totalPengeluaran],
-                backgroundColor: [
-                    'rgba(16, 185, 129, 0.8)',
-                    'rgba(239, 68, 68, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(16, 185, 129, 1)',
-                    'rgba(239, 68, 68, 1)'
-                ],
+                data: data,
+                backgroundColor: backgrounds,
                 borderWidth: 2,
                 hoverOffset: 15
             }]
@@ -576,7 +490,7 @@ function loadChart() {
                         usePointStyle: true,
                         padding: 20,
                         font: {
-                            size: 13,
+                            size: 12,
                             weight: '600'
                         }
                     }
@@ -586,8 +500,8 @@ function loadChart() {
                         label: function(context) {
                             const label = context.label || '';
                             const value = context.raw || 0;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = Math.round((value / total) * 100);
+                            const target = targets[context.dataIndex];
+                            const percentage = target.hargaBarang > 0 ? Math.round((value / target.hargaBarang) * 100) : 0;
                             return `${label}: Rp ${value.toLocaleString()} (${percentage}%)`;
                         }
                     }
@@ -599,14 +513,6 @@ function loadChart() {
             }
         }
     });
-}
-
-// Real-time updates
-function startRealtimeUpdates() {
-    // Update data setiap 30 detik
-    setInterval(() => {
-        loadSummary();
-    }, 30000);
 }
 
 // Fitur Hapus Target
@@ -661,25 +567,6 @@ function showNotification(message, type) {
     
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: white;
-        padding: 1.2rem 1.8rem;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        z-index: 1001;
-        animation: slideIn 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 600;
-        border-left: 4px solid ${type === 'success' ? '#10b981' : '#ef4444'};
-        color: ${type === 'success' ? '#10b981' : '#ef4444'};
-        max-width: 350px;
-    `;
-    
     notification.innerHTML = `
         <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
         <span>${message}</span>
@@ -710,7 +597,7 @@ function logout() {
     );
 }
 
-// Event Listeners untuk modal target detail
+// Event Listeners untuk modal
 document.getElementById('targetDetailModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeTargetDetailModal();
@@ -732,15 +619,6 @@ document.addEventListener('keydown', function(e) {
             closeModal();
         }
     }
-});
-
-// Prevent form submission on enter key
-document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-        }
-    });
 });
 
 // Initialize chart on window resize
