@@ -913,3 +913,90 @@ header {
 .notification i {
     font-size: 1.3rem;
 }
+
+/* Tambahkan di bagian akhir style.css */
+
+/* Modal Detail Target */
+.target-detail-info {
+    margin-bottom: 2rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: var(--dark);
+    min-width: 150px;
+}
+
+.detail-item span {
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.add-income-section {
+    background: var(--light);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1.5rem;
+}
+
+.add-income-section h4 {
+    margin-bottom: 1rem;
+    color: var(--dark);
+    font-size: 1.1rem;
+}
+
+/* Progress di modal */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.progress-container .progress-bar {
+    flex: 1;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-container .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), #22c55e);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.progress-container span {
+    min-width: 60px;
+    text-align: right;
+    font-weight: 600;
+}
+
+/* Target item yang bisa diklik */
+.target-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.target-item:hover {
+    transform: translateX(8px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.target-item:active {
+    transform: translateX(4px);
+}
