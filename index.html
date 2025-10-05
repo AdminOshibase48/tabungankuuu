@@ -89,6 +89,37 @@
             </header>
 
             <div class="container">
+                <!-- Ringkasan Keuangan -->
+                <div class="card card-animate">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Ringkasan Keuangan</h3>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card income-card">
+                            <i class="fas fa-arrow-down"></i>
+                            <div class="summary-info">
+                                <span class="summary-label">Pemasukan</span>
+                                <span class="summary-value" id="totalPemasukan">Rp 0</span>
+                            </div>
+                        </div>
+                        <div class="summary-card expense-card">
+                            <i class="fas fa-arrow-up"></i>
+                            <div class="summary-info">
+                                <span class="summary-label">Pengeluaran</span>
+                                <span class="summary-value" id="totalPengeluaran">Rp 0</span>
+                            </div>
+                        </div>
+                        <div class="summary-card balance-card">
+                            <i class="fas fa-wallet"></i>
+                            <div class="summary-info">
+                                <span class="summary-label">Saldo</span>
+                                <span class="summary-value" id="saldo">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Form Target Menabung -->
                 <div class="card card-animate">
                     <div class="card-header">
@@ -145,53 +176,24 @@
                     </form>
                 </div>
 
-                <!-- Ringkasan Keuangan -->
-                <div class="card card-animate">
-                    <div class="card-header">
-                        <i class="fas fa-chart-line"></i>
-                        <h3>Ringkasan Keuangan</h3>
-                    </div>
-                    <div class="summary-grid">
-                        <div class="summary-card income-card">
-                            <i class="fas fa-arrow-down"></i>
-                            <div class="summary-info">
-                                <span class="summary-label">Pemasukan</span>
-                                <span class="summary-value" id="totalPemasukan">Rp 0</span>
-                            </div>
-                        </div>
-                        <div class="summary-card expense-card">
-                            <i class="fas fa-arrow-up"></i>
-                            <div class="summary-info">
-                                <span class="summary-label">Pengeluaran</span>
-                                <span class="summary-value" id="totalPengeluaran">Rp 0</span>
-                            </div>
-                        </div>
-                        <div class="summary-card balance-card">
-                            <i class="fas fa-wallet"></i>
-                            <div class="summary-info">
-                                <span class="summary-label">Saldo</span>
-                                <span class="summary-value" id="saldo">Rp 0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Daftar Target -->
                 <div class="card card-animate">
                     <div class="card-header">
                         <i class="fas fa-target"></i>
-                        <h3>Target Menabung</h3>
+                        <h3>Target Menabung Saya</h3>
                     </div>
                     <div id="targetList" class="target-list"></div>
                 </div>
 
-                <!-- Grafik -->
+                <!-- Grafik Visualisasi -->
                 <div class="card card-animate">
                     <div class="card-header">
                         <i class="fas fa-chart-pie"></i>
                         <h3>Visualisasi Keuangan</h3>
                     </div>
-                    <canvas id="financeChart"></canvas>
+                    <div class="chart-container">
+                        <canvas id="financeChart"></canvas>
+                    </div>
                 </div>
 
                 <!-- Riwayat Transaksi -->
