@@ -206,6 +206,73 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Detail Target -->
+        <div id="targetDetailModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="targetDetailTitle">Detail Target</h3>
+                    <button class="modal-close" onclick="closeTargetDetailModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="target-detail-info">
+                        <div class="detail-item">
+                            <label>Nama Barang:</label>
+                            <span id="detailNamaBarang">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Harga Target:</label>
+                            <span id="detailHargaBarang">Rp 0</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Terkumpul:</label>
+                            <span id="detailTerkumpul">Rp 0</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Sisa:</label>
+                            <span id="detailSisa">Rp 0</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Progress:</label>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="detailProgressFill"></div>
+                                </div>
+                                <span id="detailProgressText">0%</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Target Harian:</label>
+                            <span id="detailTargetHarian">Rp 0</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Perkiraan Selesai:</label>
+                            <span id="detailPerkiraan">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="add-income-section">
+                        <h4>Tambah Pemasukan untuk Target Ini</h4>
+                        <form id="targetIncomeForm">
+                            <div class="input-group">
+                                <i class="fas fa-coins"></i>
+                                <input type="number" id="targetIncomeAmount" placeholder="Jumlah Pemasukan (Rp)" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-sticky-note"></i>
+                                <input type="text" id="targetIncomeDescription" placeholder="Keterangan Pemasukan">
+                            </div>
+                            <button type="submit" class="btn-success">
+                                <i class="fas fa-plus-circle"></i>
+                                Tambah ke Target Ini
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Konfirmasi -->
