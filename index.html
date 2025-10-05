@@ -99,22 +99,22 @@
                         <div class="summary-card income-card">
                             <i class="fas fa-arrow-down"></i>
                             <div class="summary-info">
-                                <span class="summary-label">Pemasukan</span>
+                                <span class="summary-label">Total Pemasukan</span>
                                 <span class="summary-value" id="totalPemasukan">Rp 0</span>
                             </div>
                         </div>
-                        <div class="summary-card expense-card">
-                            <i class="fas fa-arrow-up"></i>
+                        <div class="summary-card target-card">
+                            <i class="fas fa-bullseye"></i>
                             <div class="summary-info">
-                                <span class="summary-label">Pengeluaran</span>
-                                <span class="summary-value" id="totalPengeluaran">Rp 0</span>
+                                <span class="summary-label">Total Target</span>
+                                <span class="summary-value" id="totalTarget">Rp 0</span>
                             </div>
                         </div>
                         <div class="summary-card balance-card">
                             <i class="fas fa-wallet"></i>
                             <div class="summary-info">
-                                <span class="summary-label">Saldo</span>
-                                <span class="summary-value" id="saldo">Rp 0</span>
+                                <span class="summary-label">Progress Total</span>
+                                <span class="summary-value" id="progressTotal">0%</span>
                             </div>
                         </div>
                     </div>
@@ -123,7 +123,7 @@
                 <!-- Form Target Menabung -->
                 <div class="card card-animate">
                     <div class="card-header">
-                        <i class="fas fa-bullseye"></i>
+                        <i class="fas fa-plus-circle"></i>
                         <h3>Tambah Target Menabung</h3>
                     </div>
                     <form id="targetForm">
@@ -142,36 +142,6 @@
                         <button type="submit" class="btn-success">
                             <i class="fas fa-plus"></i>
                             Tambah Target
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Form Transaksi -->
-                <div class="card card-animate">
-                    <div class="card-header">
-                        <i class="fas fa-exchange-alt"></i>
-                        <h3>Catat Transaksi</h3>
-                    </div>
-                    <form id="transactionForm">
-                        <div class="input-group">
-                            <i class="fas fa-list"></i>
-                            <select id="transactionType" required>
-                                <option value="">Pilih Jenis</option>
-                                <option value="pemasukan">Pemasukan</option>
-                                <option value="pengeluaran">Pengeluaran</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <i class="fas fa-coins"></i>
-                            <input type="number" id="amount" placeholder="Jumlah (Rp)" required>
-                        </div>
-                        <div class="input-group">
-                            <i class="fas fa-sticky-note"></i>
-                            <input type="text" id="description" placeholder="Keterangan">
-                        </div>
-                        <button type="submit" class="btn-info">
-                            <i class="fas fa-save"></i>
-                            Catat Transaksi
                         </button>
                     </form>
                 </div>
@@ -200,7 +170,7 @@
                 <div class="card card-animate">
                     <div class="card-header">
                         <i class="fas fa-history"></i>
-                        <h3>Riwayat Transaksi Terbaru</h3>
+                        <h3>Riwayat Pemasukan</h3>
                     </div>
                     <div id="transactionHistory" class="transaction-list"></div>
                 </div>
@@ -258,7 +228,7 @@
                         <form id="targetIncomeForm">
                             <div class="input-group">
                                 <i class="fas fa-coins"></i>
-                                <input type="number" id="targetIncomeAmount" placeholder="Jumlah Pemasukan (Rp)" required>
+                                <input type="number" id="targetIncomeAmount" placeholder="Jumlah Pemasukan (Rp)" required min="1">
                             </div>
                             <div class="input-group">
                                 <i class="fas fa-sticky-note"></i>
@@ -266,7 +236,7 @@
                             </div>
                             <button type="submit" class="btn-success">
                                 <i class="fas fa-plus-circle"></i>
-                                Tambah ke Target Ini
+                                Tambah Pemasukan
                             </button>
                         </form>
                     </div>
