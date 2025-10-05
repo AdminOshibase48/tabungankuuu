@@ -71,11 +71,14 @@ class CelenganDB {
             type: transaction.type,
             amount: parseInt(transaction.amount),
             description: transaction.description || 'Tanpa Keterangan',
-            date: new Date().toISOString()
+            date: new Date().toISOString(),
+            targetId: transaction.targetId || null // Tambahkan targetId untuk pemasukan spesifik
         });
         this.saveUserData('transactions', transactions);
         
-        if (transaction.type === 'pemasukan') {
+        if (transaction.type === 'pemasukan' && transaction.targetId) {
+            this.updateSpecificTargetSaldo(transaction.targetId, parseInt(transaction.amount));
+        } else if (transaction.type === 'pemasukan') {
             this.updateTargetSaldo(parseInt(transaction.amount));
         }
     }
@@ -108,11 +111,29 @@ class CelenganDB {
 
         this.saveUserData('targets', updatedTargets);
     }
+
+    updateSpecificTargetSaldo(targetId, amount) {
+        const targets = this.getTargets();
+        const updatedTargets = targets.map(target => {
+            if (target.id === targetId) {
+                const toAdd = Math.min(amount, target.hargaBarang - target.terkumpul);
+                target.terkumpul += toAdd;
+            }
+            return target;
+        });
+        this.saveUserData('targets', updatedTargets);
+    }
+
+    getTargetById(targetId) {
+        const targets = this.getTargets();
+        return targets.find(target => target.id === targetId);
+    }
 }
 
 const db = new CelenganDB();
 let currentModalCallback = null;
 let financeChart = null;
+let selectedTargetId = null;
 
 // Inisialisasi aplikasi
 document.addEventListener('DOMContentLoaded', function() {
@@ -257,7 +278,7 @@ function initializeForms() {
         showSuccess(`Target "${namaBarang}" berhasil ditambahkan! 💫`);
     });
 
-    // Form Transaksi
+    // Form Transaksi Umum
     document.getElementById('transactionForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const type = document.getElementById('transactionType').value;
@@ -285,6 +306,36 @@ function initializeForms() {
         loadDashboardData();
         const emoji = type === 'pemasukan' ? '💰' : '💸';
         showSuccess(`Transaksi ${type} berhasil dicatat! ${emoji}`);
+    });
+
+    // Form Pemasukan Spesifik untuk Target
+    document.getElementById('targetIncomeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const amount = document.getElementById('targetIncomeAmount').value;
+        const description = document.getElementById('targetIncomeDescription').value.trim() || 'Pemasukan Target';
+        
+        if (!amount || amount <= 0) {
+            showError('Jumlah pemasukan harus lebih dari 0!');
+            return;
+        }
+        
+        if (!selectedTargetId) {
+            showError('Tidak ada target yang dipilih!');
+            return;
+        }
+        
+        const transaction = {
+            type: 'pemasukan',
+            amount: amount,
+            description: `${description} (Target Spesifik)`,
+            targetId: selectedTargetId
+        };
+        
+        db.saveTransaction(transaction);
+        document.getElementById('targetIncomeForm').reset();
+        loadDashboardData();
+        showSuccess(`Pemasukan berhasil ditambahkan ke target! 💰`);
+        closeTargetDetailModal();
     });
 }
 
@@ -317,11 +368,11 @@ function loadTargets() {
         const progressColor = progress >= 100 ? '#10b981' : progress >= 50 ? '#f59e0b' : '#ef4444';
         
         return `
-            <div class="target-item">
+            <div class="target-item" onclick="showTargetDetail(${target.id})">
                 <div class="target-header">
                     <div class="target-name">${target.namaBarang}</div>
                     <div class="target-actions">
-                        <button class="btn-delete" onclick="confirmDeleteTarget(${target.id}, '${target.namaBarang.replace(/'/g, "\\'")}')">
+                        <button class="btn-delete" onclick="event.stopPropagation(); confirmDeleteTarget(${target.id}, '${target.namaBarang.replace(/'/g, "\\'")}')">
                             <i class="fas fa-trash"></i> Hapus
                         </button>
                     </div>
@@ -356,6 +407,40 @@ function loadTargets() {
             </div>
         `;
     }).join('');
+}
+
+// Fungsi untuk menampilkan detail target
+function showTargetDetail(targetId) {
+    const target = db.getTargetById(targetId);
+    if (!target) return;
+    
+    selectedTargetId = targetId;
+    
+    const progress = Math.min((target.terkumpul / target.hargaBarang) * 100, 100);
+    const sisaDana = target.hargaBarang - target.terkumpul;
+    const sisaHari = target.targetHarian > 0 ? Math.ceil(sisaDana / target.targetHarian) : 0;
+    
+    // Update modal content
+    document.getElementById('targetDetailTitle').textContent = `Detail: ${target.namaBarang}`;
+    document.getElementById('detailNamaBarang').textContent = target.namaBarang;
+    document.getElementById('detailHargaBarang').textContent = `Rp ${target.hargaBarang.toLocaleString()}`;
+    document.getElementById('detailTerkumpul').textContent = `Rp ${target.terkumpul.toLocaleString()}`;
+    document.getElementById('detailSisa').textContent = `Rp ${sisaDana.toLocaleString()}`;
+    document.getElementById('detailTargetHarian').textContent = `Rp ${target.targetHarian.toLocaleString()}`;
+    document.getElementById('detailPerkiraan').textContent = `${sisaHari} hari lagi`;
+    document.getElementById('detailProgressText').textContent = `${Math.round(progress)}%`;
+    document.getElementById('detailProgressFill').style.width = `${progress}%`;
+    
+    // Reset form
+    document.getElementById('targetIncomeForm').reset();
+    
+    // Show modal
+    document.getElementById('targetDetailModal').classList.remove('hidden');
+}
+
+function closeTargetDetailModal() {
+    document.getElementById('targetDetailModal').classList.add('hidden');
+    selectedTargetId = null;
 }
 
 function loadTransactions() {
@@ -625,7 +710,13 @@ function logout() {
     );
 }
 
-// Event Listeners
+// Event Listeners untuk modal target detail
+document.getElementById('targetDetailModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeTargetDetailModal();
+    }
+});
+
 document.getElementById('confirmModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
@@ -633,8 +724,13 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
 });
 
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && !document.getElementById('confirmModal').classList.contains('hidden')) {
-        closeModal();
+    if (e.key === 'Escape') {
+        if (!document.getElementById('targetDetailModal').classList.contains('hidden')) {
+            closeTargetDetailModal();
+        }
+        if (!document.getElementById('confirmModal').classList.contains('hidden')) {
+            closeModal();
+        }
     }
 });
 
