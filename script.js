@@ -5,7 +5,6 @@ class CelenganDB {
         this.currentUserKey = 'celengan_current_user';
     }
 
-    // User management
     getUsers() {
         return JSON.parse(localStorage.getItem(this.usersKey)) || [];
     }
@@ -26,7 +25,6 @@ class CelenganDB {
         localStorage.removeItem(this.currentUserKey);
     }
 
-    // Data management untuk user
     getUserData(key) {
         const user = this.getCurrentUser();
         const data = localStorage.getItem(`celengan_${user}_${key}`);
@@ -38,7 +36,6 @@ class CelenganDB {
         localStorage.setItem(`celengan_${user}_${key}`, JSON.stringify(data));
     }
 
-    // Targets
     getTargets() {
         return this.getUserData('targets');
     }
@@ -63,7 +60,6 @@ class CelenganDB {
         return updatedTargets;
     }
 
-    // Transactions
     getTransactions() {
         return this.getUserData('transactions');
     }
@@ -79,7 +75,6 @@ class CelenganDB {
         });
         this.saveUserData('transactions', transactions);
         
-        // Update saldo di target jika pemasukan
         if (transaction.type === 'pemasukan') {
             this.updateTargetSaldo(parseInt(transaction.amount));
         }
@@ -92,7 +87,6 @@ class CelenganDB {
         const amountPerTarget = Math.floor(amount / targets.length);
         let remainingAmount = amount;
 
-        // Distribusikan ke semua target
         const updatedTargets = targets.map(target => {
             if (target.terkumpul < target.hargaBarang) {
                 const toAdd = Math.min(amountPerTarget, target.hargaBarang - target.terkumpul);
@@ -102,7 +96,6 @@ class CelenganDB {
             return target;
         });
 
-        // Jika masih ada sisa, distribusikan lagi
         if (remainingAmount > 0) {
             for (let target of updatedTargets) {
                 if (target.terkumpul < target.hargaBarang && remainingAmount > 0) {
@@ -163,6 +156,7 @@ function showDashboard() {
     document.getElementById('dashboardPage').classList.remove('hidden');
     updateWelcomeMessage();
     loadDashboardData();
+    startRealtimeUpdates();
 }
 
 function hideAllPages() {
@@ -194,7 +188,7 @@ function initializeForms() {
         if (user) {
             db.setCurrentUser(username);
             showDashboard();
-            showSuccess('Login berhasil!');
+            showSuccess('Login berhasil! Selamat menabung! 🎉');
         } else {
             showError('Username atau password salah!');
         }
@@ -219,11 +213,6 @@ function initializeForms() {
         
         if (password.length < 3) {
             showError('Password harus minimal 3 karakter!');
-            return;
-        }
-        
-        if (username.length < 3) {
-            showError('Username harus minimal 3 karakter!');
             return;
         }
         
@@ -265,7 +254,7 @@ function initializeForms() {
         db.saveTarget(target);
         this.reset();
         loadDashboardData();
-        showSuccess('Target berhasil ditambahkan!');
+        showSuccess(`Target "${namaBarang}" berhasil ditambahkan! 💫`);
     });
 
     // Form Transaksi
@@ -294,7 +283,8 @@ function initializeForms() {
         db.saveTransaction(transaction);
         this.reset();
         loadDashboardData();
-        showSuccess('Transaksi berhasil dicatat!');
+        const emoji = type === 'pemasukan' ? '💰' : '💸';
+        showSuccess(`Transaksi ${type} berhasil dicatat! ${emoji}`);
     });
 }
 
@@ -310,7 +300,13 @@ function loadTargets() {
     const targetList = document.getElementById('targetList');
     
     if (targets.length === 0) {
-        targetList.innerHTML = '<div class="empty-state"><i class="fas fa-bullseye"></i><p>Belum ada target menabung</p></div>';
+        targetList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-bullseye"></i>
+                <p>Belum ada target menabung</p>
+                <small>Tambahkan target pertama Anda!</small>
+            </div>
+        `;
         return;
     }
     
@@ -318,6 +314,7 @@ function loadTargets() {
         const progress = Math.min((target.terkumpul / target.hargaBarang) * 100, 100);
         const sisaHari = target.targetHarian > 0 ? Math.ceil((target.hargaBarang - target.terkumpul) / target.targetHarian) : 0;
         const sisaDana = target.hargaBarang - target.terkumpul;
+        const progressColor = progress >= 100 ? '#10b981' : progress >= 50 ? '#f59e0b' : '#ef4444';
         
         return `
             <div class="target-item">
@@ -329,16 +326,32 @@ function loadTargets() {
                         </button>
                     </div>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${progress}%"></div>
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <span>Progress: ${Math.round(progress)}%</span>
+                        <span>Rp ${target.terkumpul.toLocaleString()} / Rp ${target.hargaBarang.toLocaleString()}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%; background: ${progressColor};"></div>
+                    </div>
                 </div>
                 <div class="target-details">
-                    <div><i class="fas fa-bullseye"></i> Target: Rp ${target.hargaBarang.toLocaleString()}</div>
-                    <div><i class="fas fa-piggy-bank"></i> Terkumpul: Rp ${target.terkumpul.toLocaleString()}</div>
-                    <div><i class="fas fa-calendar-day"></i> Harian: Rp ${target.targetHarian.toLocaleString()}</div>
-                    <div><i class="fas fa-chart-line"></i> Progress: ${Math.round(progress)}%</div>
-                    <div><i class="fas fa-wallet"></i> Sisa: Rp ${sisaDana.toLocaleString()}</div>
-                    <div><i class="fas fa-clock"></i> Perkiraan: ${sisaHari} hari</div>
+                    <div class="target-detail-item">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>Harian: Rp ${target.targetHarian.toLocaleString()}</span>
+                    </div>
+                    <div class="target-detail-item">
+                        <i class="fas fa-wallet"></i>
+                        <span>Sisa: Rp ${sisaDana.toLocaleString()}</span>
+                    </div>
+                    <div class="target-detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Perkiraan: ${sisaHari} hari</span>
+                    </div>
+                    <div class="target-detail-item">
+                        <i class="fas ${progress >= 100 ? 'fa-check-circle' : 'fa-spinner'}"></i>
+                        <span>Status: ${progress >= 100 ? 'Tercapai!' : 'Dalam Progress'}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -350,11 +363,17 @@ function loadTransactions() {
     const transactionHistory = document.getElementById('transactionHistory');
     
     if (transactions.length === 0) {
-        transactionHistory.innerHTML = '<div class="empty-state"><i class="fas fa-exchange-alt"></i><p>Belum ada transaksi</p></div>';
+        transactionHistory.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exchange-alt"></i>
+                <p>Belum ada transaksi</p>
+                <small>Catat transaksi pertama Anda!</small>
+            </div>
+        `;
         return;
     }
     
-    transactionHistory.innerHTML = transactions.slice(-10).reverse().map(transaction => {
+    transactionHistory.innerHTML = transactions.slice(-8).reverse().map(transaction => {
         const date = new Date(transaction.date);
         const formattedDate = date.toLocaleDateString('id-ID', { 
             day: 'numeric',
@@ -365,12 +384,12 @@ function loadTransactions() {
         });
         
         return `
-            <div class="transaction-item">
+            <div class="transaction-item ${transaction.type}">
                 <div class="transaction-info">
                     <div class="transaction-desc">${transaction.description}</div>
                     <div class="transaction-date">${formattedDate}</div>
                 </div>
-                <div class="transaction-amount ${transaction.type}">
+                <div class="transaction-amount">
                     ${transaction.type === 'pemasukan' ? '+' : '-'} Rp ${transaction.amount.toLocaleString()}
                 </div>
             </div>
@@ -398,9 +417,9 @@ function loadSummary() {
     // Update color based on balance
     const saldoElement = document.getElementById('saldo');
     if (saldo < 0) {
-        saldoElement.style.color = '#dc3545';
+        saldoElement.style.color = '#fef2f2';
     } else {
-        saldoElement.style.color = '#28a745';
+        saldoElement.style.color = '#f0fdf4';
     }
 }
 
@@ -425,138 +444,84 @@ function loadChart() {
     
     // Jika tidak ada transaksi
     if (transactions.length === 0) {
-        ctx.font = '16px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
-        ctx.fillStyle = '#666';
+        ctx.font = '16px "Inter", sans-serif';
+        ctx.fillStyle = '#64748b';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('Belum ada data transaksi', canvas.width / 2, canvas.height / 2);
         return;
     }
     
-    // Process data untuk chart - group by month
-    const monthlyData = {};
-    
-    transactions.forEach(transaction => {
-        const date = new Date(transaction.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthLabel = date.toLocaleDateString('id-ID', { 
-            month: 'long', 
-            year: 'numeric' 
-        });
+    // Data untuk pie chart
+    const totalPemasukan = transactions
+        .filter(t => t.type === 'pemasukan')
+        .reduce((sum, t) => sum + t.amount, 0);
         
-        if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = {
-                label: monthLabel,
-                pemasukan: 0,
-                pengeluaran: 0
-            };
-        }
-        
-        monthlyData[monthKey][transaction.type] += transaction.amount;
-    });
+    const totalPengeluaran = transactions
+        .filter(t => t.type === 'pengeluaran')
+        .reduce((sum, t) => sum + t.amount, 0);
     
-    // Urutkan berdasarkan bulan (terlama ke terbaru)
-    const sortedMonths = Object.keys(monthlyData)
-        .sort()
-        .slice(-6); // Ambil 6 bulan terakhir
-    
-    const labels = sortedMonths.map(month => monthlyData[month].label);
-    const pemasukanData = sortedMonths.map(month => monthlyData[month].pemasukan);
-    const pengeluaranData = sortedMonths.map(month => monthlyData[month].pengeluaran);
-    
-    // Buat chart baru
+    // Buat pie chart
     financeChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Pemasukan',
-                    data: pemasukanData,
-                    backgroundColor: 'rgba(40, 167, 69, 0.8)',
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    borderSkipped: false,
-                },
-                {
-                    label: 'Pengeluaran',
-                    data: pengeluaranData,
-                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    borderSkipped: false,
-                }
-            ]
+            labels: ['Pemasukan', 'Pengeluaran'],
+            datasets: [{
+                data: [totalPemasukan, totalPengeluaran],
+                backgroundColor: [
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(239, 68, 68, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(239, 68, 68, 1)'
+                ],
+                borderWidth: 2,
+                hoverOffset: 15
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '60%',
             plugins: {
                 legend: {
-                    position: 'top',
+                    position: 'bottom',
                     labels: {
                         usePointStyle: true,
                         padding: 20,
                         font: {
-                            size: 12
+                            size: 13,
+                            weight: '600'
                         }
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleFont: {
-                        size: 13
-                    },
-                    bodyFont: {
-                        size: 13
-                    },
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: Rp ${context.raw.toLocaleString()}`;
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: Rp ${value.toLocaleString()} (${percentage}%)`;
                         }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            if (value >= 1000000) {
-                                return 'Rp ' + (value / 1000000).toFixed(1) + 'Jt';
-                            } else if (value >= 1000) {
-                                return 'Rp ' + (value / 1000).toFixed(0) + 'Rb';
-                            }
-                            return 'Rp ' + value;
-                        },
-                        font: {
-                            size: 11
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: {
-                            size: 11
-                        },
-                        maxRotation: 45
                     }
                 }
             },
             animation: {
-                duration: 1000,
-                easing: 'easeOutQuart'
+                animateScale: true,
+                animateRotate: true
             }
         }
     });
+}
+
+// Real-time updates
+function startRealtimeUpdates() {
+    // Update data setiap 30 detik
+    setInterval(() => {
+        loadSummary();
+    }, 30000);
 }
 
 // Fitur Hapus Target
@@ -571,7 +536,7 @@ function confirmDeleteTarget(targetId, targetName) {
 function deleteTarget(targetId) {
     db.deleteTarget(targetId);
     loadDashboardData();
-    showSuccess('Target berhasil dihapus!');
+    showSuccess('Target berhasil dihapus! 🗑️');
     closeModal();
 }
 
@@ -604,31 +569,30 @@ function showSuccess(message) {
 }
 
 function showNotification(message, type) {
-    // Hapus notifikasi sebelumnya
     const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
         existingNotification.remove();
     }
     
-    // Buat element notifikasi
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: ${type === 'success' ? '#28a745' : '#dc3545'};
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        background: white;
+        padding: 1.2rem 1.8rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         z-index: 1001;
         animation: slideIn 0.3s ease;
-        max-width: 300px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-weight: 500;
+        gap: 12px;
+        font-weight: 600;
+        border-left: 4px solid ${type === 'success' ? '#10b981' : '#ef4444'};
+        color: ${type === 'success' ? '#10b981' : '#ef4444'};
+        max-width: 350px;
     `;
     
     notification.innerHTML = `
@@ -638,15 +602,14 @@ function showNotification(message, type) {
     
     document.body.appendChild(notification);
     
-    // Hapus notifikasi setelah 3 detik
     setTimeout(() => {
-        notification.style.animation = 'fadeIn 0.3s ease reverse';
+        notification.style.animation = 'slideIn 0.3s ease reverse';
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.parentNode.removeChild(notification);
             }
         }, 300);
-    }, 3000);
+    }, 4000);
 }
 
 function logout() {
@@ -657,12 +620,12 @@ function logout() {
             db.logout();
             showLogin();
             closeModal();
-            showSuccess('Logout berhasil!');
+            showSuccess('Logout berhasil! Sampai jumpa! 👋');
         }
     );
 }
 
-// Event Listeners untuk modal
+// Event Listeners
 document.getElementById('confirmModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
@@ -675,7 +638,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Prevent form submission on enter key in input fields
+// Prevent form submission on enter key
 document.querySelectorAll('input').forEach(input => {
     input.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
@@ -684,7 +647,7 @@ document.querySelectorAll('input').forEach(input => {
     });
 });
 
-// Initialize chart on window resize untuk responsive
+// Initialize chart on window resize
 window.addEventListener('resize', function() {
     if (financeChart instanceof Chart) {
         financeChart.resize();
